@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
@@ -9,7 +10,8 @@ public class GameController : MonoBehaviour
         Playing,
         Microgame,
         Paused,
-        End
+        RoundEnd,
+        GameEnd
     }
 
     public GameState mState = GameState.Menu;
@@ -30,6 +32,23 @@ public class GameController : MonoBehaviour
 
     #endregion Workstation References
 
+    #region UI Elements because the GameLogic totally should dictate what the UI does
+
+    public GameObject UI_TimerText;
+
+    #endregion UI Elements because the GameLogic totally should dictate what the UI does
+
+    #region Round-based controls
+
+    public float RoundTimeRemaining { get { return (mState == GameState.Playing) ? (mRoundStartTime + kRoundDuration) - Time.time : 0; } }
+    private int mRoundNumber = 0;
+    private float mRoundStartTime = -1;
+    private const float kRoundDuration = 5;
+
+    public string RoundTime { get { return string.Format("Round {0}\n{1}:{2:D2}", mRoundNumber, (int)(RoundTimeRemaining / 60), Mathf.RoundToInt(RoundTimeRemaining % 60)); } }
+
+    #endregion Round-based controls
+
     // Use this for initialization
     private void Start()
     {
@@ -40,11 +59,33 @@ public class GameController : MonoBehaviour
         Debug.Assert(G_Workstation_4 != null);
         Debug.Assert(G_Workstation_5 != null);
         Debug.Assert(G_Workstation_6 != null);
+        Debug.Assert(UI_TimerText != null);
+
+        // Move this into user-clicked-start territory
+        StartRound();
+    }
+
+    public void StartRound()
+    {
+        mState = GameState.Playing;
+        mRoundNumber++;
+        mRoundStartTime = Time.time;
     }
 
     // Update is called once per frame
     private void Update()
     {
+        if (RoundTimeRemaining < 0)
+        {
+            // End the round - do the cleanup
+            mState = GameState.RoundEnd;
+            if (mActiveGame != null)
+            {
+                mActiveGame.ResetGame();
+                mActiveGame = null;
+            }
+        }
+
         switch (mState)
         {
             case GameState.Menu:
@@ -54,11 +95,15 @@ public class GameController : MonoBehaviour
             case GameState.Microgame:
                 tickMicrogame();
                 break;
-            case GameState.End:
+            case GameState.RoundEnd:
+                break;
+            case GameState.GameEnd:
                 break;
             case GameState.Paused:
                 break;
         }
+        // Update the UI
+        UI_TimerText.GetComponent<Text>().text = RoundTime;
     }
 
     private void tickMicrogame()
