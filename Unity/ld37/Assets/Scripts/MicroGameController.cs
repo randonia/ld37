@@ -6,6 +6,8 @@ public abstract class MicroGameController : MonoBehaviour
 {
     public enum MicroState
     {
+        Idle,
+        Transitioning,
         Playing,
         Victory,
         Lose
@@ -16,5 +18,7 @@ public abstract class MicroGameController : MonoBehaviour
     /// </summary>
     public abstract void StartGame();
 
-    public MicroState State;
+    public abstract void ResetGame();
+
+    public MicroState State = MicroState.Idle;
 }

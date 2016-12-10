@@ -7,6 +7,8 @@ public class PlayerController : MonoBehaviour
     // Left Click
     public const int MOUSE0 = 0;
 
+    public GameObject G_GameController;
+    private GameController mGameController;
     public GameObject G_MainCamera;
     private Camera mCamera;
 
@@ -18,6 +20,9 @@ public class PlayerController : MonoBehaviour
     // Use this for initialization
     private void Start()
     {
+        Debug.Assert(G_GameController != null);
+        mGameController = G_GameController.GetComponent<GameController>();
+        Debug.Assert(mGameController != null);
         Debug.Assert(G_MainCamera != null, "Player needs a reference to the main camera");
         Debug.Assert(G_ParticleSystem != null, "Player needs a reference to the particle emitter");
         G_ParticleSystem.transform.position = new Vector3(100.0f, 100.0f, 100.0f);
@@ -50,6 +55,9 @@ public class PlayerController : MonoBehaviour
         if (Input.GetMouseButtonDown(MOUSE0) && mSelectedWorkstation != null)
         {
             Debug.Log("Selecting " + mSelectedWorkstation.name);
+            mSelectionParticles.Stop();
+            WorkstationData wsData = mSelectedWorkstation.GetComponent<WorkstationData>();
+            mGameController.SelectWorkstation(wsData.StationType);
         }
     }
 }
