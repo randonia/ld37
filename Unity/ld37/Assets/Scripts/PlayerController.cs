@@ -4,11 +4,16 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // Left Click
+    public const int MOUSE0 = 0;
+
     public GameObject G_MainCamera;
     private Camera mCamera;
 
     public GameObject G_ParticleSystem;
     private ParticleSystem mSelectionParticles;
+
+    private GameObject mSelectedWorkstation;
 
     // Use this for initialization
     private void Start()
@@ -29,8 +34,8 @@ public class PlayerController : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit) && hit.collider.gameObject.CompareTag("Workstation"))
         {
-            Debug.Log(hit.collider.gameObject.name);
             mSelectionParticles.transform.position = hit.collider.gameObject.transform.position + Vector3.up * 2;
+            mSelectedWorkstation = hit.collider.gameObject;
             if (!mSelectionParticles.isEmitting)
             {
                 mSelectionParticles.Play();
@@ -38,7 +43,13 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
+            mSelectedWorkstation = null;
             mSelectionParticles.Stop();
+        }
+
+        if (Input.GetMouseButtonDown(MOUSE0) && mSelectedWorkstation != null)
+        {
+            Debug.Log("Selecting " + mSelectedWorkstation.name);
         }
     }
 }
