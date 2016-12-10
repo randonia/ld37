@@ -1,0 +1,44 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    public GameObject G_MainCamera;
+    private Camera mCamera;
+
+    public GameObject G_ParticleSystem;
+    private ParticleSystem mSelectionParticles;
+
+    // Use this for initialization
+    private void Start()
+    {
+        Debug.Assert(G_MainCamera != null, "Player needs a reference to the main camera");
+        Debug.Assert(G_ParticleSystem != null, "Player needs a reference to the particle emitter");
+        G_ParticleSystem.transform.position = new Vector3(100.0f, 100.0f, 100.0f);
+        mCamera = G_MainCamera.GetComponent<Camera>();
+        mSelectionParticles = G_ParticleSystem.GetComponent<ParticleSystem>();
+    }
+
+    // Update is called once per frame
+    private void Update()
+    {
+        // Raycast from the camera
+        RaycastHit hit;
+        Ray ray = mCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out hit) && hit.collider.gameObject.CompareTag("Workstation"))
+        {
+            Debug.Log(hit.collider.gameObject.name);
+            mSelectionParticles.transform.position = hit.collider.gameObject.transform.position + Vector3.up * 2;
+            if (!mSelectionParticles.isEmitting)
+            {
+                mSelectionParticles.Play();
+            }
+        }
+        else
+        {
+            mSelectionParticles.Stop();
+        }
+    }
+}
