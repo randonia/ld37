@@ -3702,6 +3702,8 @@ MonoBehaviour:
     type: 2}
   PREFAB_WORKSTATION_COFFEE_1: {fileID: 1187402841562976, guid: 454e119206def604f90a7c46a21db30f,
     type: 2}
+  PREFAB_WORKSTATION_TEA_1: {fileID: 1185529049112186, guid: 95629661e81f79b4587f132be76af0d2,
+    type: 2}
   G_MicroGameArena: {fileID: 732521901}
   G_Camera: {fileID: 1171366372}
   UI_TimerText: {fileID: 1656047475}

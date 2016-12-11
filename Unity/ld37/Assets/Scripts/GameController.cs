@@ -77,6 +77,7 @@ public class GameController : MonoBehaviour
     #region Workstation Prefabs
 
     public GameObject PREFAB_WORKSTATION_COFFEE_1;
+    public GameObject PREFAB_WORKSTATION_TEA_1;
 
     #endregion Workstation Prefabs
 
@@ -137,6 +138,7 @@ public class GameController : MonoBehaviour
         Debug.Assert(UI_BlankWorkstationTemplate != null);
         Debug.Assert(UI_UpgradePanel != null);
         Debug.Assert(PREFAB_WORKSTATION_COFFEE_1 != null);
+        Debug.Assert(PREFAB_WORKSTATION_TEA_1 != null);
         for (int i = 0; i < G_Workstations.Length; ++i)
         {
             Debug.Assert(G_Workstations[i] != null, "Workstation[" + i + "] is NULL!");
@@ -203,22 +205,17 @@ public class GameController : MonoBehaviour
 
     public void BuildWorkstation(string type, int workstationIdx)
     {
+        GameObject newWorkstation = null;
+        float newYRot = 0;
         switch (type)
         {
             case "water":
                 break;
             case "coffee":
-                G_EmptyWorkstations[workstationIdx].SetActive(false);
-                GameObject newWorkstation = Instantiate(PREFAB_WORKSTATION_COFFEE_1);
-                newWorkstation.transform.position = G_EmptyWorkstations[workstationIdx].transform.position;
-                float newYRot = (workstationIdx == 1 || workstationIdx == 2) ? 0f : (workstationIdx == 3 || workstationIdx == 4) ? 90f : 180f;
-                Debug.Log("Setting rot to " + newYRot);
-                Quaternion currRot = newWorkstation.transform.rotation;
-                currRot.Set(currRot.x, newYRot, currRot.z, currRot.w);
-                newWorkstation.transform.Rotate(transform.up, newYRot);
-                G_Workstations[workstationIdx] = newWorkstation;
+                newWorkstation = Instantiate(PREFAB_WORKSTATION_COFFEE_1);
                 break;
             case "tea":
+                newWorkstation = Instantiate(PREFAB_WORKSTATION_TEA_1);
                 break;
             case "bakery":
                 break;
@@ -230,6 +227,16 @@ public class GameController : MonoBehaviour
                 G_Workstations[workstationIdx] = G_EmptyWorkstations[workstationIdx];
                 break;
         }
+
+        if (newWorkstation == null) { return; }
+        G_EmptyWorkstations[workstationIdx].SetActive(false);
+        G_Workstations[workstationIdx].SetActive(false);
+        newWorkstation.transform.position = G_EmptyWorkstations[workstationIdx].transform.position;
+        newYRot = (workstationIdx == 1 || workstationIdx == 2) ? 0f : (workstationIdx == 3 || workstationIdx == 4) ? 90f : 180f;
+        Quaternion currRot = newWorkstation.transform.rotation;
+        currRot.Set(currRot.x, newYRot, currRot.z, currRot.w);
+        newWorkstation.transform.Rotate(transform.up, newYRot);
+        G_Workstations[workstationIdx] = newWorkstation;
     }
 
     /// <summary>
@@ -278,23 +285,6 @@ public class GameController : MonoBehaviour
             newPanel.SetActive(true);
             newPanel.transform.SetParent(UI_WorkstationList.transform);
         }
-    }
-
-    public void BuildWorkstation(WorkstationData.WorkstationType type, int stationNum, int bar)
-    {
-        GameObject newWorkstation = null;
-        Transform newPosition = null;
-        switch (type)
-        {
-            case WorkstationData.WorkstationType.coffee_1:
-                newWorkstation = Instantiate(PREFAB_WORKSTATION_COFFEE_1);
-                break;
-        }
-        GameObject oldWorkstation = G_Workstations[stationNum];
-        newPosition = G_Workstations[stationNum].transform;
-        newWorkstation.transform.position = newPosition.position;
-        G_Workstations[stationNum] = newWorkstation;
-        Destroy(oldWorkstation);
     }
 
     private void OnRoundEnded()
