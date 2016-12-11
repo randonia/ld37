@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
+
 using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
@@ -21,20 +23,26 @@ public class GameController : MonoBehaviour
     // Forgive me father for I have sinned.
     public GameObject G_MicroGame_coffee_1;
 
-    public GameObject G_Workstation_1;
-    public GameObject G_Workstation_2;
-    public GameObject G_Workstation_3;
-    public GameObject G_Workstation_4;
-    public GameObject G_Workstation_5;
-    public GameObject G_Workstation_6;
-
+    public GameObject[] G_EmptyWorkstations;
+    public GameObject[] G_Workstations;
     public MicroGameController mActiveGame;
+    public GameObject mActiveWorkstation;
 
     #endregion Workstation References
+
+    #region Workstation Prefabs
+
+    public GameObject PREFAB_WORKSTATION_COFFEE_1;
+
+    #endregion Workstation Prefabs
 
     #region UI Elements because the GameLogic totally should dictate what the UI does
 
     public GameObject UI_TimerText;
+    public GameObject UI_WorkstationList;
+    public GameObject UI_WorkstationTemplate;
+    public GameObject UI_BlankWorkstationTemplate;
+    public GameObject UI_UpgradePanel;
 
     #endregion UI Elements because the GameLogic totally should dictate what the UI does
 
@@ -53,16 +61,35 @@ public class GameController : MonoBehaviour
     private void Start()
     {
         Debug.Assert(G_MicroGame_coffee_1 != null);
-        Debug.Assert(G_Workstation_1 != null);
-        Debug.Assert(G_Workstation_2 != null);
-        Debug.Assert(G_Workstation_3 != null);
-        Debug.Assert(G_Workstation_4 != null);
-        Debug.Assert(G_Workstation_5 != null);
-        Debug.Assert(G_Workstation_6 != null);
         Debug.Assert(UI_TimerText != null);
-
+        Debug.Assert(UI_WorkstationList != null);
+        Debug.Assert(UI_WorkstationTemplate != null);
+        Debug.Assert(UI_BlankWorkstationTemplate != null);
+        Debug.Assert(UI_UpgradePanel != null);
+        Debug.Assert(PREFAB_WORKSTATION_COFFEE_1 != null);
+        for (int i = 0; i < G_Workstations.Length; ++i)
+        {
+            Debug.Assert(G_Workstations[i] != null, "Workstation[" + i + "] is NULL!");
+        }
+        for (int j = 0; j < G_EmptyWorkstations.Length; ++j)
+        {
+            Debug.Assert(G_EmptyWorkstations[j] != null, "Workstation [" + j + "] is NULL!");
+        }
+        Debug.Assert(G_Workstations.Length > 0);
+        Debug.Assert(G_EmptyWorkstations.Length > 0);
         // Move this into user-clicked-start territory
-        StartRound();
+        //StartRound();
+        // Builds and creates the workstation list!
+        //InitializeWorkstationList();
+    }
+
+    public void ToggleWorkstationList()
+    {
+        UI_UpgradePanel.SetActive(!UI_UpgradePanel.activeSelf);
+        if (UI_UpgradePanel.activeSelf)
+        {
+            InitializeWorkstationList();
+        }
     }
 
     public void StartRound()
@@ -70,6 +97,112 @@ public class GameController : MonoBehaviour
         mState = GameState.Playing;
         mRoundNumber++;
         mRoundStartTime = Time.time;
+    }
+
+    public void BuildWorkstationCallback(string parameters)
+    {
+        // This is so janky but #CLAMJAM
+        string[] callbackParams = parameters.Split(',');
+        string type = callbackParams[0];
+        string buttonName = EventSystem.current.currentSelectedGameObject.name;
+        string[] buttonInfo = buttonName.Split('_');
+        int workstationIdx = int.Parse(buttonInfo[1]);
+
+        Debug.Log(string.Format("Callback for {0} - Idx:[{1}] - Name: {2}", type, workstationIdx.ToString(), EventSystem.current.currentSelectedGameObject.name));
+        switch (type)
+        {
+            case "water":
+                break;
+            case "coffee":
+                G_EmptyWorkstations[workstationIdx].SetActive(false);
+                GameObject newWorkstation = Instantiate(PREFAB_WORKSTATION_COFFEE_1);
+                newWorkstation.transform.position = G_EmptyWorkstations[workstationIdx].transform.position;
+                float newYRot = (workstationIdx == 1 || workstationIdx == 2) ? 0f : (workstationIdx == 3 || workstationIdx == 4) ? 90f : 180f;
+                Debug.Log("Setting rot to " + newYRot);
+                Quaternion currRot = newWorkstation.transform.rotation;
+                currRot.Set(currRot.x, newYRot, currRot.z, currRot.w);
+                newWorkstation.transform.Rotate(transform.up, newYRot);
+                G_Workstations[workstationIdx] = newWorkstation;
+                break;
+            case "tea":
+                break;
+            case "bakery":
+                break;
+            case "upgrade":
+                break;
+            case "delete":
+                Destroy(G_Workstations[workstationIdx]);
+                G_EmptyWorkstations[workstationIdx].SetActive(true);
+                G_Workstations[workstationIdx] = G_EmptyWorkstations[workstationIdx];
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Given the state of g_workstations, initialize the list
+    /// </summary>
+    public void InitializeWorkstationList()
+    {
+        int infinicheck = 0;
+        // Wipe the current workstationlist (if any)
+        while (UI_WorkstationList.transform.childCount > 0 && infinicheck++ < 50)
+        {
+            Debug.Assert(infinicheck < 48);
+            Transform nextOnTheChoppingBlock = UI_WorkstationList.transform.GetChild(0);
+            nextOnTheChoppingBlock.SetParent(null);
+            Destroy(nextOnTheChoppingBlock.gameObject);
+        }
+
+        // Index at 1 because 0 is the register
+        for (int wsIdx = 1; wsIdx < G_Workstations.Length; ++wsIdx)
+        {
+            GameObject workstation = G_Workstations[wsIdx];
+            WorkstationData wsData = workstation.GetComponent<WorkstationData>();
+            GameObject newPanel;
+            if (wsData != null)
+            {
+                Debug.Log("WS is " + wsData.StationType);
+                newPanel = Instantiate(UI_WorkstationTemplate);
+                // Set the upgrade and delete buttton names
+                newPanel.transform.FindChild("upgrade_button").name = string.Format("wsupgrade_{0}", wsIdx.ToString());
+                newPanel.transform.FindChild("delete_button").name = string.Format("wsdelete_{0}", wsIdx.ToString());
+                newPanel.transform.FindChild("ws_number").GetComponent<Text>().text = wsIdx.ToString();
+            }
+            else
+            {
+                Debug.Log("WS " + workstation.name + " has no type");
+                newPanel = Instantiate(UI_BlankWorkstationTemplate);
+                Transform t_text = newPanel.transform.FindChild("number");
+                t_text.gameObject.GetComponent<Text>().text = wsIdx.ToString();
+
+                // Rename all the group buttons because sure why not
+                Transform tButtonGroup = newPanel.transform.FindChild("group");
+                for (int tIdx = 0; tIdx < tButtonGroup.childCount; ++tIdx)
+                {
+                    tButtonGroup.GetChild(tIdx).name = string.Format("wsbutton_{0}", wsIdx);
+                }
+            }
+            newPanel.name = string.Format("workstation_{0}", wsIdx.ToString());
+            newPanel.SetActive(true);
+            newPanel.transform.SetParent(UI_WorkstationList.transform);
+        }
+    }
+
+    public void BuildWorkstation(WorkstationData.WorkstationType type, int stationNum)
+    {
+        GameObject newWorkstation = null;
+        Transform newPosition = null;
+        switch (type)
+        {
+            case WorkstationData.WorkstationType.coffee_1:
+                newWorkstation = Instantiate(PREFAB_WORKSTATION_COFFEE_1);
+                break;
+        }
+        GameObject oldWorkstation = G_Workstations[stationNum];
+        newPosition = G_Workstations[stationNum].transform;
+        newWorkstation.transform.position = newPosition.position;
+        G_Workstations[stationNum] = newWorkstation;
+        Destroy(oldWorkstation);
     }
 
     // Update is called once per frame
@@ -119,6 +252,7 @@ public class GameController : MonoBehaviour
                     mActiveGame.ResetGame();
                     mState = GameState.Playing;
                     mActiveGame = null;
+                    mActiveWorkstation = null;
                     break;
                 case MicroGameController.MicroState.Playing:
                     break;
@@ -127,15 +261,22 @@ public class GameController : MonoBehaviour
                     mActiveGame.ResetGame();
                     mState = GameState.Playing;
                     mActiveGame = null;
+                    mActiveWorkstation = null;
                     break;
             }
         }
     }
 
-    public void SelectWorkstation(WorkstationData.WorkstationType type)
+    /// <summary>
+    /// Activates the workstation and starts the microgame associated with it
+    /// </summary>
+    /// <param name="type"></param>
+    public void ActivateWorkstation(GameObject workstation)
     {
+        mActiveWorkstation = workstation;
+        WorkstationData wsData = workstation.GetComponent<WorkstationData>();
         GameObject microGameObject = null;
-        switch (type)
+        switch (wsData.StationType)
         {
             case WorkstationData.WorkstationType.coffee_1:
                 microGameObject = G_MicroGame_coffee_1;

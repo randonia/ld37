@@ -11,7 +11,6 @@ public class PlayerController : MonoBehaviour
     private GameController mGameController;
     public GameObject G_MainCamera;
     private Camera mCamera;
-    public GameObject[] Workstations;
 
     public GameObject G_ParticleSystem;
     private ParticleSystem mSelectionParticles;
@@ -29,14 +28,6 @@ public class PlayerController : MonoBehaviour
         G_ParticleSystem.transform.position = new Vector3(100.0f, 100.0f, 100.0f);
         mCamera = G_MainCamera.GetComponent<Camera>();
         mSelectionParticles = G_ParticleSystem.GetComponent<ParticleSystem>();
-        Workstations = new GameObject[7];
-        // This just keeps getting better and better
-        Workstations[1] = mGameController.G_Workstation_1;
-        Workstations[2] = mGameController.G_Workstation_2;
-        Workstations[3] = mGameController.G_Workstation_3;
-        Workstations[4] = mGameController.G_Workstation_4;
-        Workstations[5] = mGameController.G_Workstation_5;
-        Workstations[6] = mGameController.G_Workstation_6;
     }
 
     /// <summary>
@@ -47,7 +38,7 @@ public class PlayerController : MonoBehaviour
     {
         Vector3 targetPos = iTweenPath.GetPath("Workstations")[number];
         iTween.MoveTo(gameObject, iTween.Hash("position", targetPos, "time", 1.0f));
-        iTween.LookTo(gameObject, iTween.Hash("looktarget", Workstations[number].transform, "time", 1.0f));
+        iTween.LookTo(gameObject, iTween.Hash("looktarget", mGameController.G_Workstations[number].transform, "time", 1.0f));
     }
 
     // Update is called once per frame
@@ -105,8 +96,7 @@ public class PlayerController : MonoBehaviour
             {
                 Debug.Log("Selecting " + mSelectedWorkstation.name);
                 mSelectionParticles.Stop();
-                WorkstationData wsData = mSelectedWorkstation.GetComponent<WorkstationData>();
-                mGameController.SelectWorkstation(wsData.StationType);
+                mGameController.ActivateWorkstation(mSelectedWorkstation);
             }
         }
     }
