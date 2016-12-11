@@ -16,43 +16,13 @@ public class MicroGameCoffee1AController : MicroGameController
 
     protected override void _StartGame()
     {
-        State = MicroState.Transitioning;
-        iTween.MoveTo(gameObject, iTween.Hash("position", Vector3.zero, "time", 0.75f, "oncomplete", "StartGameCallback", "oncompletetarget", gameObject));
-        reinitialize();
-    }
-
-    public void StartGameCallback()
-    {
         State = MicroState.Playing;
         mStartTime = Time.time;
         G_CoffeePot.SetActive(true);
     }
 
-    public override void ResetGame()
+    protected override void _ResetGame()
     {
-        iTween.MoveTo(gameObject, iTween.Hash("position", new Vector3(UnityEngine.Random.Range(-200, 200), 0, 150),
-            "time", 1.5f,
-            "delay", 1f,
-            "easetype", "easeoutcubic",
-            "onstart", (State == MicroState.Victory) ? "ClearSpew" : "",
-            "onstarttarget", gameObject,
-            "oncomplete", "reinitialize",
-            "oncompletetarget", gameObject));
-        State = MicroState.Idle;
-    }
-
-    private void ClearSpew()
-    {
-        Debug.Log("Spew clearing");
-        mCoffeeSpew.Stop();
-        mCoffeeSpew.Clear();
-    }
-
-    public void reinitialize()
-    {
-        mCoffeeSpew.Stop();
-        ClearSpew();
-        G_CoffeePot.SetActive(false);
     }
 
     // Use this for initialization
@@ -117,5 +87,12 @@ public class MicroGameCoffee1AController : MicroGameController
     public override WorkstationData.WorkstationType GetDesire()
     {
         return mDesire;
+    }
+
+    protected override void _Reinitialize()
+    {
+        mCoffeeSpew.Stop();
+        mCoffeeSpew.Clear();
+        G_CoffeePot.SetActive(false);
     }
 }

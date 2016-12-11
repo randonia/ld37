@@ -4,6 +4,9 @@ using UnityEngine;
 
 public abstract class MicroGameController : MonoBehaviour
 {
+    protected GameObject G_GameController;
+    protected GameController mGameController;
+
     public enum MicroState
     {
         Idle,
@@ -13,18 +16,40 @@ public abstract class MicroGameController : MonoBehaviour
         Lose
     }
 
-    /// <summary>
-    /// Resets the game
-    /// </summary>
+    protected abstract void _StartGame();
+
+    protected abstract void _ResetGame();
+
+    protected abstract void _Reinitialize();
+
     public void StartGame()
     {
+        G_GameController = GameObject.Find("GameController");
+        Debug.Assert(G_GameController != null);
+        mGameController = G_GameController.GetComponent<GameController>();
+        Debug.Assert(mGameController != null);
         Debug.Assert(mDesire != WorkstationData.WorkstationType.None);
+        State = MicroState.Transitioning;
+        iTween.MoveTo(gameObject, iTween.Hash("position", mGameController.G_MicroGameArena.transform, "time", 0.75f, "oncomplete", "StartGameCallback", "oncompletetarget", gameObject));
         _StartGame();
     }
 
-    protected abstract void _StartGame();
+    public void ResetGame()
+    {
+        iTween.MoveTo(gameObject, iTween.Hash("position", new Vector3(UnityEngine.Random.Range(-200, 200), 0, 150),
+            "time", 1.5f,
+            "delay", 1f,
+            "easetype", "easeoutcubic",
+            "onstart", "Reinitialize",
+            "onstarttarget", gameObject));
+        State = MicroState.Idle;
+    }
 
-    public abstract void ResetGame();
+    public void Reinitialize()
+    {
+        mGameController.CameraToPos(GameController.CAMERA_GAMEPOS);
+        _Reinitialize();
+    }
 
     public abstract WorkstationData.WorkstationType GetDesire();
 

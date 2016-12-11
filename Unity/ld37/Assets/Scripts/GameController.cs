@@ -72,6 +72,9 @@ public class GameController : MonoBehaviour
 
     #region UI Elements because the GameLogic totally should dictate what the UI does
 
+    public GameObject G_MicroGameArena;
+    public GameObject G_Camera;
+    private Camera mCamera;
     public GameObject UI_TimerText;
     public GameObject UI_WorkstationList;
     public GameObject UI_WorkstationTemplate;
@@ -82,6 +85,8 @@ public class GameController : MonoBehaviour
     public GameObject UI_TeaIcon;
     public GameObject UI_BakeryIcon;
     public GameObject UI_WaterIcon;
+    public const int CAMERA_GAMEPOS = 0;
+    public const int CAMERA_MICROGAMEPOS = 1;
 
     #endregion UI Elements because the GameLogic totally should dictate what the UI does
 
@@ -101,7 +106,9 @@ public class GameController : MonoBehaviour
     {
         mActiveNPCs = new Queue<GameObject>();
         mWaitingZoneNPCs = new Queue<GameObject>();
-
+        Debug.Assert(G_Camera != null);
+        mCamera = G_Camera.GetComponent<Camera>();
+        Debug.Assert(G_MicroGameArena != null);
         Debug.Assert(G_MicroGame_coffee_1 != null);
         Debug.Assert(G_CashRegister != null);
         Debug.Assert(UI_OrderStack != null);
@@ -131,6 +138,8 @@ public class GameController : MonoBehaviour
         StartRound();
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
+        // Debug for building workstation 3 as coffee
+        //BuildWorkstation("coffee", 3);
     }
 
     public void ToggleWorkstationList()
@@ -147,7 +156,7 @@ public class GameController : MonoBehaviour
     {
         // 9 is the max
         if (mActiveNPCs.Count > 9) { return; }
-        int randomNPC = UnityEngine.Random.Range(0, 1) * PREFAB_NPCS.Length;
+        int randomNPC = (int)(UnityEngine.Random.Range(0f, 1f) * PREFAB_NPCS.Length);
         GameObject newCustomer = Instantiate(PREFAB_NPCS[randomNPC]);
         Vector3[] queue = iTweenPath.GetPath("Customer Line");
         newCustomer.transform.position = queue[queue.Length - 1];
@@ -173,8 +182,11 @@ public class GameController : MonoBehaviour
         string buttonName = EventSystem.current.currentSelectedGameObject.name;
         string[] buttonInfo = buttonName.Split('_');
         int workstationIdx = int.Parse(buttonInfo[1]);
+        BuildWorkstation(type, workstationIdx);
+    }
 
-        Debug.Log(string.Format("Callback for {0} - Idx:[{1}] - Name: {2}", type, workstationIdx.ToString(), EventSystem.current.currentSelectedGameObject.name));
+    public void BuildWorkstation(string type, int workstationIdx)
+    {
         switch (type)
         {
             case "water":
@@ -227,7 +239,6 @@ public class GameController : MonoBehaviour
             GameObject newPanel;
             if (wsData != null)
             {
-                Debug.Log("WS is " + wsData.StationType);
                 newPanel = Instantiate(UI_WorkstationTemplate);
                 // Set the upgrade and delete buttton names
                 newPanel.transform.FindChild("upgrade_button").name = string.Format("wsupgrade_{0}", wsIdx.ToString());
@@ -236,7 +247,6 @@ public class GameController : MonoBehaviour
             }
             else
             {
-                Debug.Log("WS " + workstation.name + " has no type");
                 newPanel = Instantiate(UI_BlankWorkstationTemplate);
                 Transform t_text = newPanel.transform.FindChild("number");
                 t_text.gameObject.GetComponent<Text>().text = wsIdx.ToString();
@@ -254,7 +264,7 @@ public class GameController : MonoBehaviour
         }
     }
 
-    public void BuildWorkstation(WorkstationData.WorkstationType type, int stationNum)
+    public void BuildWorkstation(WorkstationData.WorkstationType type, int stationNum, int bar)
     {
         GameObject newWorkstation = null;
         Transform newPosition = null;
@@ -318,6 +328,12 @@ public class GameController : MonoBehaviour
         mDebugText.text = string.Format("State: {0}", mState.ToString());
     }
 
+    public void CameraToPos(int pos)
+    {
+        Vector3[] path = iTweenPath.GetPath("CameraPath");
+        iTween.MoveTo(G_Camera, iTween.Hash("position", path[pos], "time", 0.25f));
+    }
+
     private void tickMicrogame()
     {
         if (mActiveGame != null)
@@ -336,11 +352,12 @@ public class GameController : MonoBehaviour
                 case MicroGameController.MicroState.Playing:
                     break;
                 case MicroGameController.MicroState.Victory:
-                    Debug.Log("Victory" + mActiveGame.GetDesire());
+                    Debug.Log("Victory " + mActiveGame.GetDesire());
                     mActiveGame.ResetGame();
                     mState = GameState.Playing;
                     mActiveGame = null;
                     mActiveWorkstation = null;
+
                     break;
             }
         }
@@ -408,5 +425,6 @@ public class GameController : MonoBehaviour
         Debug.Assert(mActiveGame != null);
         mState = GameState.Microgame;
         mActiveGame.StartGame();
+        CameraToPos(CAMERA_MICROGAMEPOS);
     }
 }
