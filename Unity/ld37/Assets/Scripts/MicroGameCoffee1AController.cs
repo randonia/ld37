@@ -10,10 +10,11 @@ public class MicroGameCoffee1AController : MicroGameController
     public GameObject G_Cup;
     public GameObject G_CoffeeSpew;
     private ParticleSystem mCoffeeSpew;
+    public float mStartTime;
     public float range_X;
     public float potSpeed = 5.0f;
 
-    public override void StartGame()
+    protected override void _StartGame()
     {
         State = MicroState.Transitioning;
         iTween.MoveTo(gameObject, iTween.Hash("position", Vector3.zero, "time", 0.75f, "oncomplete", "StartGameCallback", "oncompletetarget", gameObject));
@@ -23,18 +24,35 @@ public class MicroGameCoffee1AController : MicroGameController
     public void StartGameCallback()
     {
         State = MicroState.Playing;
+        mStartTime = Time.time;
+        G_CoffeePot.SetActive(true);
     }
 
     public override void ResetGame()
     {
+        iTween.MoveTo(gameObject, iTween.Hash("position", new Vector3(UnityEngine.Random.Range(-200, 200), 0, 150),
+            "time", 1.5f,
+            "delay", 1f,
+            "easetype", "easeoutcubic",
+            "onstart", (State == MicroState.Victory) ? "ClearSpew" : "",
+            "onstarttarget", gameObject,
+            "oncomplete", "reinitialize",
+            "oncompletetarget", gameObject));
         State = MicroState.Idle;
-        iTween.MoveTo(gameObject, iTween.Hash("position", new Vector3(UnityEngine.Random.Range(-200, 200), 0, 150), "time", 1.5f, "delay", 1f, "easetype", "easeOut", "oncomplete", "reinitialize", "oncompletetarget", gameObject));
+    }
+
+    private void ClearSpew()
+    {
+        Debug.Log("Spew clearing");
+        mCoffeeSpew.Stop();
+        mCoffeeSpew.Clear();
     }
 
     public void reinitialize()
     {
         mCoffeeSpew.Stop();
-        mCoffeeSpew.Clear();
+        ClearSpew();
+        G_CoffeePot.SetActive(false);
     }
 
     // Use this for initialization
@@ -44,6 +62,7 @@ public class MicroGameCoffee1AController : MicroGameController
         Debug.Assert(G_Cup != null);
         Debug.Assert(G_CoffeeSpew != null);
         mCoffeeSpew = G_CoffeeSpew.GetComponent<ParticleSystem>();
+        mDesire = WorkstationData.WorkstationType.coffee_1;
     }
 
     // Update is called once per frame
@@ -63,7 +82,7 @@ public class MicroGameCoffee1AController : MicroGameController
 
     private void tickPlaying()
     {
-        float potPosX = Mathf.Sin(Time.time * potSpeed) * range_X;
+        float potPosX = Mathf.Sin(mStartTime + Time.time * potSpeed) * range_X;
         Vector3 potPos = G_CoffeePot.transform.localPosition;
         potPos.x = potPosX;
         G_CoffeePot.transform.localPosition = potPos;
@@ -93,5 +112,10 @@ public class MicroGameCoffee1AController : MicroGameController
         {
             mCoffeeSpew.Stop();
         }
+    }
+
+    public override WorkstationData.WorkstationType GetDesire()
+    {
+        return mDesire;
     }
 }

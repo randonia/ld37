@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -27,11 +29,40 @@ public class GameController : MonoBehaviour
     public GameObject G_MicroGame_coffee_1;
 
     public GameObject[] G_EmptyWorkstations;
+
+    public HashSet<WorkstationData.WorkstationType> GetAvailableDesires()
+    {
+        HashSet<WorkstationData.WorkstationType> allDesires = new HashSet<WorkstationData.WorkstationType>();
+
+        for (int i = 1; i < G_Workstations.Length; ++i)
+        {
+            WorkstationData wsData = G_Workstations[i].GetComponent<WorkstationData>();
+            if (wsData == null) { continue; }
+            allDesires.Add(wsData.StationType);
+        }
+        return allDesires;
+    }
+
     public GameObject[] G_Workstations;
     public MicroGameController mActiveGame;
     public GameObject mActiveWorkstation;
 
     #endregion Workstation References
+
+    #region NPC Prefabs
+
+    public GameObject[] PREFAB_NPCS;
+
+    #endregion NPC Prefabs
+
+    #region NPC References
+
+    private Queue<GameObject> mActiveNPCs;
+    private Queue<GameObject> mWaitingZoneNPCs;
+    public GameObject G_CashRegister;
+    public GameObject G_WaitingZoneLookTarget;
+
+    #endregion NPC References
 
     #region Workstation Prefabs
 
@@ -46,6 +77,11 @@ public class GameController : MonoBehaviour
     public GameObject UI_WorkstationTemplate;
     public GameObject UI_BlankWorkstationTemplate;
     public GameObject UI_UpgradePanel;
+    public GameObject UI_OrderStack;
+    public GameObject UI_CoffeeIcon;
+    public GameObject UI_TeaIcon;
+    public GameObject UI_BakeryIcon;
+    public GameObject UI_WaterIcon;
 
     #endregion UI Elements because the GameLogic totally should dictate what the UI does
 
@@ -63,7 +99,16 @@ public class GameController : MonoBehaviour
     // Use this for initialization
     private void Start()
     {
+        mActiveNPCs = new Queue<GameObject>();
+        mWaitingZoneNPCs = new Queue<GameObject>();
+
         Debug.Assert(G_MicroGame_coffee_1 != null);
+        Debug.Assert(G_CashRegister != null);
+        Debug.Assert(UI_OrderStack != null);
+        Debug.Assert(UI_CoffeeIcon != null);
+        Debug.Assert(UI_TeaIcon != null);
+        Debug.Assert(UI_BakeryIcon != null);
+        Debug.Assert(UI_WaterIcon != null);
         Debug.Assert(UI_TimerText != null);
         Debug.Assert(UI_WorkstationList != null);
         Debug.Assert(UI_WorkstationTemplate != null);
@@ -96,6 +141,21 @@ public class GameController : MonoBehaviour
             InitializeWorkstationList();
         }
         GUI.FocusControl(null);
+    }
+
+    public void AddCustomer()
+    {
+        // 9 is the max
+        if (mActiveNPCs.Count > 9) { return; }
+        int randomNPC = UnityEngine.Random.Range(0, 1) * PREFAB_NPCS.Length;
+        GameObject newCustomer = Instantiate(PREFAB_NPCS[randomNPC]);
+        Vector3[] queue = iTweenPath.GetPath("Customer Line");
+        newCustomer.transform.position = queue[queue.Length - 1];
+        CustomerController customer = newCustomer.GetComponent<CustomerController>();
+        customer.G_GameController = gameObject;
+        customer.G_CashRegister = G_CashRegister;
+        customer.MoveToQueuePosition(mActiveNPCs.Count);
+        mActiveNPCs.Enqueue(newCustomer);
     }
 
     public void StartRound()
@@ -267,7 +327,7 @@ public class GameController : MonoBehaviour
                 case MicroGameController.MicroState.Idle:
                     break;
                 case MicroGameController.MicroState.Lose:
-                    Debug.Log("Lose!");
+                    Debug.Log("Lose! " + mActiveGame.GetDesire());
                     mActiveGame.ResetGame();
                     mState = GameState.Playing;
                     mActiveGame = null;
@@ -276,7 +336,7 @@ public class GameController : MonoBehaviour
                 case MicroGameController.MicroState.Playing:
                     break;
                 case MicroGameController.MicroState.Victory:
-                    Debug.Log("Victory");
+                    Debug.Log("Victory" + mActiveGame.GetDesire());
                     mActiveGame.ResetGame();
                     mState = GameState.Playing;
                     mActiveGame = null;
@@ -300,6 +360,43 @@ public class GameController : MonoBehaviour
         {
             case WorkstationData.WorkstationType.register:
                 Debug.Log("Check out customer");
+                if (mActiveNPCs.Count > 0)
+                {
+                    // Adds a desire to the list
+                    GameObject nextInLine = mActiveNPCs.Dequeue();
+                    CustomerController cust = nextInLine.GetComponent<CustomerController>();
+                    int strIndex = cust.Desire.ToString().IndexOf('_');
+                    if (strIndex < 0)
+                    {
+                        Debug.LogError(string.Format("String index for {0} is negative. Aborting customer", cust.Desire.ToString()));
+                        return;
+                    }
+                    string desireKey = cust.Desire.ToString().Substring(0, strIndex);
+                    GameObject newIcon = null;
+                    switch (desireKey)
+                    {
+                        case "coffee":
+                            newIcon = Instantiate(UI_CoffeeIcon);
+                            break;
+                        case "tea":
+                            newIcon = Instantiate(UI_TeaIcon);
+                            break;
+                        case "bakery":
+                            newIcon = Instantiate(UI_BakeryIcon);
+                            break;
+                        case "water":
+                            newIcon = Instantiate(UI_WaterIcon);
+                            break;
+                    }
+                    if (newIcon == null) { return; }
+                    newIcon.transform.SetParent(UI_OrderStack.transform);
+                    newIcon.transform.SetAsFirstSibling();
+                    newIcon.SetActive(true);
+
+                    cust.MoveToWaitingZone(mWaitingZoneNPCs.Count);
+                    mWaitingZoneNPCs.Enqueue(nextInLine);
+                }
+
                 return;
             case WorkstationData.WorkstationType.coffee_1:
                 microGameObject = G_MicroGame_coffee_1;
