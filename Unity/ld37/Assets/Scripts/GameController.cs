@@ -59,10 +59,20 @@ public class GameController : MonoBehaviour
 
     private Queue<GameObject> mActiveNPCs;
     private Queue<GameObject> mWaitingZoneNPCs;
+    private Queue<GameObject> mInventory;
     public GameObject G_CashRegister;
     public GameObject G_WaitingZoneLookTarget;
 
     #endregion NPC References
+
+    #region Item Prefabs
+
+    public GameObject PREFAB_WATER_1;
+    public GameObject PREFAB_COFFEE_1;
+    public GameObject PREFAB_TEA_1;
+    public GameObject PREFAB_CROISSANT_1;
+
+    #endregion Item Prefabs
 
     #region Workstation Prefabs
 
@@ -106,8 +116,13 @@ public class GameController : MonoBehaviour
     {
         mActiveNPCs = new Queue<GameObject>();
         mWaitingZoneNPCs = new Queue<GameObject>();
+        mInventory = new Queue<GameObject>();
         Debug.Assert(G_Camera != null);
         mCamera = G_Camera.GetComponent<Camera>();
+        Debug.Assert(PREFAB_COFFEE_1 != null);
+        Debug.Assert(PREFAB_WATER_1 != null);
+        Debug.Assert(PREFAB_TEA_1 != null);
+        Debug.Assert(PREFAB_CROISSANT_1 != null);
         Debug.Assert(G_MicroGameArena != null);
         Debug.Assert(G_MicroGame_coffee_1 != null);
         Debug.Assert(G_CashRegister != null);
@@ -139,7 +154,7 @@ public class GameController : MonoBehaviour
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
         // Debug for building workstation 3 as coffee
-        //BuildWorkstation("coffee", 3);
+        BuildWorkstation("coffee", 3);
     }
 
     public void ToggleWorkstationList()
@@ -183,6 +198,7 @@ public class GameController : MonoBehaviour
         string[] buttonInfo = buttonName.Split('_');
         int workstationIdx = int.Parse(buttonInfo[1]);
         BuildWorkstation(type, workstationIdx);
+        ToggleWorkstationList();
     }
 
     public void BuildWorkstation(string type, int workstationIdx)
@@ -301,6 +317,7 @@ public class GameController : MonoBehaviour
             }
         }
 
+        OrganizeInventory();
         switch (mState)
         {
             case GameState.Menu:
@@ -328,6 +345,26 @@ public class GameController : MonoBehaviour
         mDebugText.text = string.Format("State: {0}", mState.ToString());
     }
 
+    public void DequeueInventory()
+    {
+        if (mInventory.Count > 0)
+        {
+            GameObject oldItem = mInventory.Dequeue();
+            Destroy(oldItem);
+        }
+    }
+
+    private void OrganizeInventory()
+    {
+        Vector3[] path = iTweenPath.GetPath("Customer Counter Queue");
+        int idx = 0;
+        foreach (GameObject item in mInventory)
+        {
+            //item.transform.position = path[idx++];
+            iTween.MoveTo(item, iTween.Hash("position", path[idx++], "time", 3.25f));
+        }
+    }
+
     public void CameraToPos(int pos)
     {
         Vector3[] path = iTweenPath.GetPath("CameraPath");
@@ -352,12 +389,21 @@ public class GameController : MonoBehaviour
                 case MicroGameController.MicroState.Playing:
                     break;
                 case MicroGameController.MicroState.Victory:
-                    Debug.Log("Victory " + mActiveGame.GetDesire());
+                    WorkstationData.WorkstationType desire = mActiveGame.GetDesire();
+                    Debug.Log("Victory " + desire);
                     mActiveGame.ResetGame();
                     mState = GameState.Playing;
                     mActiveGame = null;
                     mActiveWorkstation = null;
-
+                    GameObject newItem = null;
+                    switch (desire)
+                    {
+                        case WorkstationData.WorkstationType.coffee_1:
+                            newItem = Instantiate(PREFAB_COFFEE_1);
+                            break;
+                    }
+                    if (newItem == null) { break; }
+                    mInventory.Enqueue(newItem);
                     break;
             }
         }
@@ -406,6 +452,7 @@ public class GameController : MonoBehaviour
                             break;
                     }
                     if (newIcon == null) { return; }
+                    newIcon.name = desireKey;
                     newIcon.transform.SetParent(UI_OrderStack.transform);
                     newIcon.transform.SetAsFirstSibling();
                     newIcon.SetActive(true);
