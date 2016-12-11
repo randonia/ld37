@@ -17,6 +17,13 @@ public class PlayerController : MonoBehaviour
 
     private GameObject mSelectedWorkstation;
 
+    #region User Input
+
+    private bool mIsMoving;
+    private int mCurrentStation = -1;
+
+    #endregion User Input
+
     // Use this for initialization
     private void Start()
     {
@@ -36,16 +43,32 @@ public class PlayerController : MonoBehaviour
     /// <param name="number"></param>
     private void MoveToWorkstation(int number)
     {
+        if (mIsMoving) { return; }
+        if (number == mCurrentStation) { onMoveComplete(number); return; }
+        mIsMoving = true;
         Vector3 targetPos = iTweenPath.GetPath("Workstations")[number];
-        iTween.MoveTo(gameObject, iTween.Hash("position", targetPos, "time", 1.0f));
+        iTween.MoveTo(gameObject, iTween.Hash("position", targetPos, "time", 0.5f, "easetype", "easeinoutquad", "oncomplete", "onMoveComplete", "oncompletetarget", gameObject, "oncompleteparams", number));
         iTween.LookTo(gameObject, iTween.Hash("looktarget", mGameController.G_Workstations[number].transform, "time", 1.0f));
+    }
+
+    private void onMoveComplete(int number)
+    {
+        iTween.LookTo(gameObject, iTween.Hash("looktarget", mGameController.G_Workstations[number].transform, "time", 0.25f));
+        mCurrentStation = number;
+        // Activate the station
+        mGameController.ActivateWorkstation(mGameController.G_Workstations[mCurrentStation]);
+        mIsMoving = false;
     }
 
     // Update is called once per frame
     private void Update()
     {
         // Oh god
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            MoveToWorkstation(0);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             MoveToWorkstation(1);
         }

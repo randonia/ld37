@@ -547,4 +547,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6d13afe228bfa34581d8c1c4ecf60ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  StationType: 1
+  StationType: 4

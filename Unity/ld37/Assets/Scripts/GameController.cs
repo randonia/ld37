@@ -16,7 +16,10 @@ public class GameController : MonoBehaviour
         GameEnd
     }
 
+    private GameState mLastState;
     public GameState mState = GameState.Menu;
+    public GameObject G_DEBUGTEXT;
+    private Text mDebugText;
 
     #region Workstation References
 
@@ -77,8 +80,10 @@ public class GameController : MonoBehaviour
         }
         Debug.Assert(G_Workstations.Length > 0);
         Debug.Assert(G_EmptyWorkstations.Length > 0);
+        mDebugText = G_DEBUGTEXT.GetComponent<Text>();
         // Move this into user-clicked-start territory
-        //StartRound();
+        Debug.Log("STARTING ROUND IN DEBUG");
+        StartRound();
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
     }
@@ -90,6 +95,7 @@ public class GameController : MonoBehaviour
         {
             InitializeWorkstationList();
         }
+        GUI.FocusControl(null);
     }
 
     public void StartRound()
@@ -205,9 +211,15 @@ public class GameController : MonoBehaviour
         Destroy(oldWorkstation);
     }
 
+    private void OnRoundEnded()
+    {
+        Debug.Log("Round ended");
+    }
+
     // Update is called once per frame
     private void Update()
     {
+        mLastState = mState;
         if (RoundTimeRemaining < 0)
         {
             // End the round - do the cleanup
@@ -229,6 +241,11 @@ public class GameController : MonoBehaviour
                 tickMicrogame();
                 break;
             case GameState.RoundEnd:
+                // Oh yea bb this is how transitions work
+                if (mLastState == GameState.Playing || mLastState == GameState.Microgame)
+                {
+                    OnRoundEnded();
+                }
                 break;
             case GameState.GameEnd:
                 break;
@@ -237,6 +254,8 @@ public class GameController : MonoBehaviour
         }
         // Update the UI
         UI_TimerText.GetComponent<Text>().text = RoundTime;
+
+        mDebugText.text = string.Format("State: {0}", mState.ToString());
     }
 
     private void tickMicrogame()
@@ -275,9 +294,13 @@ public class GameController : MonoBehaviour
     {
         mActiveWorkstation = workstation;
         WorkstationData wsData = workstation.GetComponent<WorkstationData>();
+        if (wsData == null) { return; }
         GameObject microGameObject = null;
         switch (wsData.StationType)
         {
+            case WorkstationData.WorkstationType.register:
+                Debug.Log("Check out customer");
+                return;
             case WorkstationData.WorkstationType.coffee_1:
                 microGameObject = G_MicroGame_coffee_1;
                 mActiveGame = G_MicroGame_coffee_1.GetComponent<MicroGameController>();
