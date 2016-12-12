@@ -86,15 +86,12 @@ public class MicroGameTea1AController : MicroGameController
         float distanceSqr = (G_Teabag.transform.position - G_EndPos.transform.position).sqrMagnitude;
         float startDistanceSqr = (G_Teabag.transform.position - G_StartPos.transform.position).sqrMagnitude;
         float distanceToCupSqr = (G_TeaCup.transform.position - G_Teabag.transform.position).sqrMagnitude;
-        Debug.Log(distanceToCupSqr.ToString());
         if (distanceToCupSqr < 5f)
         {
-            Debug.Log("Victory");
             State = MicroState.Victory;
         }
         if (distanceSqr < 40.0f || startDistanceSqr > 4000)
         {
-            Debug.Log("Failure?");
             State = MicroState.Lose;
         }
     }
