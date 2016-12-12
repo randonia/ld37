@@ -28,6 +28,8 @@ public class GameController : MonoBehaviour
     // Forgive me father for I have sinned.
     public GameObject G_MicroGame_coffee_1;
 
+    public GameObject G_MicroGame_tea_1;
+
     public GameObject[] G_EmptyWorkstations;
 
     public HashSet<WorkstationData.WorkstationType> GetAvailableDesires()
@@ -85,7 +87,6 @@ public class GameController : MonoBehaviour
 
     public GameObject G_MicroGameArena;
     public GameObject G_Camera;
-    private Camera mCamera;
     public GameObject UI_TimerText;
     public GameObject UI_WorkstationList;
     public GameObject UI_WorkstationTemplate;
@@ -119,13 +120,13 @@ public class GameController : MonoBehaviour
         mWaitingZoneNPCs = new Queue<GameObject>();
         mInventory = new Queue<GameObject>();
         Debug.Assert(G_Camera != null);
-        mCamera = G_Camera.GetComponent<Camera>();
         Debug.Assert(PREFAB_COFFEE_1 != null);
         Debug.Assert(PREFAB_WATER_1 != null);
         Debug.Assert(PREFAB_TEA_1 != null);
         Debug.Assert(PREFAB_CROISSANT_1 != null);
         Debug.Assert(G_MicroGameArena != null);
         Debug.Assert(G_MicroGame_coffee_1 != null);
+        Debug.Assert(G_MicroGame_tea_1 != null);
         Debug.Assert(G_CashRegister != null);
         Debug.Assert(UI_OrderStack != null);
         Debug.Assert(UI_CoffeeIcon != null);
@@ -152,11 +153,12 @@ public class GameController : MonoBehaviour
         mDebugText = G_DEBUGTEXT.GetComponent<Text>();
         // Move this into user-clicked-start territory
         Debug.Log("STARTING ROUND IN DEBUG");
-        StartRound();
+        //StartRound();
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
         // Debug for building workstation 3 as coffee
-        BuildWorkstation("coffee", 3);
+        //BuildWorkstation("tea", 3);
+        //CameraToPos(CAMERA_GAMEPOS);
     }
 
     public void ToggleWorkstationList()
@@ -391,8 +393,18 @@ public class GameController : MonoBehaviour
                         case WorkstationData.WorkstationType.coffee_1:
                             newItem = Instantiate(PREFAB_COFFEE_1);
                             break;
+                        case WorkstationData.WorkstationType.tea_1:
+                            newItem = Instantiate(PREFAB_TEA_1);
+                            break;
+                        case WorkstationData.WorkstationType.water_1:
+                            newItem = Instantiate(PREFAB_WATER_1);
+                            break;
+                        case WorkstationData.WorkstationType.bakery_1:
+                            newItem = Instantiate(PREFAB_CROISSANT_1);
+                            break;
                     }
                     if (newItem == null) { break; }
+                    newItem.transform.position.Set(0, 0, 5f);
                     mInventory.Enqueue(newItem);
                     break;
             }
@@ -454,11 +466,14 @@ public class GameController : MonoBehaviour
                 return;
             case WorkstationData.WorkstationType.coffee_1:
                 microGameObject = G_MicroGame_coffee_1;
-                mActiveGame = G_MicroGame_coffee_1.GetComponent<MicroGameController>();
+                break;
+            case WorkstationData.WorkstationType.tea_1:
+                microGameObject = G_MicroGame_tea_1;
                 break;
         }
 
         Debug.Assert(microGameObject != null);
+        mActiveGame = microGameObject.GetComponent<MicroGameController>();
         Debug.Assert(mActiveGame != null);
         mState = GameState.Microgame;
         mActiveGame.StartGame();

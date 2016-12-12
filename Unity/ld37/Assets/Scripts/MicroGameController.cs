@@ -4,7 +4,7 @@ using UnityEngine;
 
 public abstract class MicroGameController : MonoBehaviour
 {
-    protected GameObject G_GameController;
+    public GameObject G_GameController;
     protected GameController mGameController;
 
     public enum MicroState
@@ -28,7 +28,7 @@ public abstract class MicroGameController : MonoBehaviour
         Debug.Assert(G_GameController != null);
         mGameController = G_GameController.GetComponent<GameController>();
         Debug.Assert(mGameController != null);
-        Debug.Assert(mDesire != WorkstationData.WorkstationType.None);
+        Debug.Assert(GetDesire() != WorkstationData.WorkstationType.None);
         State = MicroState.Transitioning;
         iTween.MoveTo(gameObject, iTween.Hash("position", mGameController.G_MicroGameArena.transform, "time", 0.75f, "oncomplete", "StartGameCallback", "oncompletetarget", gameObject));
         _StartGame();
