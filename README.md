@@ -7,25 +7,32 @@ Ryan Andonian - [@zambini845][1]
 Merlyn Morgan-Graham - [@merlyndmg][2]  
 
 ![][20]
+
 ## Gameplay ##
 You just opened up a coffee shop in your local penguin village. Serve customers by playing minigames to fulfill their orders. If your lines get too long or you run out of space to store your food, you'll lose!
 
 ## How to Play ##
 ### Game ###
 Take your customers' orders by going to the cashier's counter. As customers arrive, press Q to take the order of the first person in line. They will move to the right to wait for their food. If you've already made what they ordered, they'll take what's on the counter.
+
 ![][25]
 
 Fill your customers' orders by using the workstations that correspond to their desire. The bar on the right hand side of the screen shows your customers' orders. (You do not have to fulfill them in order). If you have downtime you can always prepare some orders preemptively by using the workstations.
+
 ![][24]
 
 Don't let any of your lines get too long, and don't store too much food on your counter, that's gotta be a heal code violation.
+
 ![][26]
 
 #### How to toast pastries: ####
 When you use an empty toaster, you'll place a pastry and start the timer. Wait until it's finished.
+
 ![][28]
+
 Once it's finished, simply use the workstation again.
 ![][27]
+
 
 ### Controls ###
 + 1 - Prepare Water
