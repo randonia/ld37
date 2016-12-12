@@ -22,7 +22,7 @@ Fill your customers' orders by using the workstations that correspond to their d
 
 ![][24]
 
-Don't let any of your lines get too long, and don't store too much food on your counter, that's gotta be a heal code violation.
+Don't let any of your lines get too long, and don't store too much food on your counter, that's gotta be a healh code violation.
 
 ![][26]
 
