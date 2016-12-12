@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
@@ -15,11 +15,13 @@ public class GameController : MonoBehaviour
         Microgame,
         Paused,
         RoundEnd,
-        GameEnd
+        GameEnd,
+        Lose
     }
 
     private GameState mLastState;
-    public GameState mState = GameState.Menu;
+    private GameState mState = GameState.Menu;
+    public GameState State { get { return mState; } set { mState = value; } }
     public GameObject G_DEBUGTEXT;
     private Text mDebugText;
 
@@ -92,6 +94,14 @@ public class GameController : MonoBehaviour
 
     public GameObject G_MicroGameArena;
     public GameObject G_Camera;
+    public GameObject UI_LoseScreen;
+    public GameObject UI_LoseScore;
+    private string mLoseReason;
+    private const int LOSE_QUEUE = 1;
+    private const int LOSE_WAIT = 2;
+    private const int LOSE_INVENTORY = 3;
+    public GameObject[] UI_ToDisableOnLoss;
+    public GameObject UI_LoseReason;
     public GameObject UI_TimerText;
     public GameObject UI_WorkstationList;
     public GameObject UI_WorkstationTemplate;
@@ -109,18 +119,21 @@ public class GameController : MonoBehaviour
 
     #region Round-based controls
 
-    public float RoundTimeRemaining { get { return (mState == GameState.Playing) ? (mRoundStartTime + kRoundDuration) - Time.time : 0; } }
     private int mRoundNumber = 0;
-    private float mRoundStartTime = -1;
+    public float mRoundStartTime = -1;
     private const float kRoundDuration = 5;
+    private float mLastNPCSpawn = -1;
+    private int mSpawnRate = 5;
 
-    public string RoundTime { get { return string.Format("Round {0}\n{1}:{2:D2}", mRoundNumber, (int)(RoundTimeRemaining / 60), Mathf.RoundToInt(RoundTimeRemaining % 60)); } }
+    public float RoundTime { get { return Time.time - mRoundStartTime; } }
+    public string RoundTimeString { get { return string.Format("{1:D2}:{2:D2}", mRoundNumber, (int)(RoundTime / 60), Mathf.RoundToInt(RoundTime % 60)); } }
 
     #endregion Round-based controls
 
     // Use this for initialization
     private void Start()
     {
+        mRoundStartTime = Time.time;
         mActiveNPCs = new Queue<GameObject>();
         mWaitingZoneNPCs = new List<GameObject>();
         mInventory = new List<GameObject>();
@@ -145,7 +158,12 @@ public class GameController : MonoBehaviour
         Debug.Assert(UI_WorkstationList != null);
         Debug.Assert(UI_WorkstationTemplate != null);
         Debug.Assert(UI_BlankWorkstationTemplate != null);
+        Debug.Assert(UI_LoseScreen != null);
+        Debug.Assert(UI_LoseScore != null);
+        Debug.Assert(UI_LoseReason != null);
         Debug.Assert(UI_UpgradePanel != null);
+        Debug.Assert(UI_ToDisableOnLoss != null);
+        Debug.Assert(UI_ToDisableOnLoss.Length > 0);
         Debug.Assert(PREFAB_WORKSTATION_COFFEE_1 != null);
         Debug.Assert(PREFAB_WORKSTATION_TEA_1 != null);
         Debug.Assert(PREFAB_WORKSTATION_WATER_1 != null);
@@ -166,12 +184,14 @@ public class GameController : MonoBehaviour
         //StartRound();
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
-        // Debug for building workstation 3 as coffee
+
+        // DEFINITELY NOT DEBUG DON'T TOUCH THIS OR THE GAME BREAKS
         BuildWorkstation("water", 1);
         BuildWorkstation("coffee", 2);
         BuildWorkstation("tea", 3);
         BuildWorkstation("bakery", 4);
-        //CameraToPos(CAMERA_GAMEPOS);
+        CameraToPos(CAMERA_GAMEPOS);
+        State = GameState.Playing;
     }
 
     public void ToggleWorkstationList()
@@ -187,7 +207,12 @@ public class GameController : MonoBehaviour
     public void AddCustomer()
     {
         // 9 is the max
-        if (mActiveNPCs.Count > 9) { return; }
+        if (mActiveNPCs.Count > 9)
+        {
+            State = GameState.Lose;
+            mLoseReason = GetLoseReason(LOSE_QUEUE);
+            return;
+        }
         int randomNPC = (int)(UnityEngine.Random.Range(0f, 1f) * PREFAB_NPCS.Length);
         GameObject newCustomer = Instantiate(PREFAB_NPCS[randomNPC]);
         Vector3[] queue = iTweenPath.GetPath("Customer Line");
@@ -201,7 +226,7 @@ public class GameController : MonoBehaviour
 
     public void StartRound()
     {
-        mState = GameState.Playing;
+        State = GameState.Playing;
         mRoundNumber++;
         mRoundStartTime = Time.time;
     }
@@ -324,29 +349,23 @@ public class GameController : MonoBehaviour
         Debug.Log("Round ended");
     }
 
+    public void RestartGame()
+    {
+        SceneManager.LoadScene("ryansandbox");
+    }
+
     // Update is called once per frame
     private void Update()
     {
-        mLastState = mState;
-        if (RoundTimeRemaining < 0)
-        {
-            // End the round - do the cleanup
-            mState = GameState.RoundEnd;
-            if (mActiveGame != null)
-            {
-                mActiveGame.ResetGame();
-                mActiveGame = null;
-            }
-        }
-
         OrganizeInventory();
         OrganizeOrderingQueue();
         OrganizeWaitQueue();
-        switch (mState)
+        switch (State)
         {
             case GameState.Menu:
                 break;
             case GameState.Playing:
+                tickPlaying();
                 break;
             case GameState.Microgame:
                 tickMicrogame();
@@ -362,11 +381,38 @@ public class GameController : MonoBehaviour
                 break;
             case GameState.Paused:
                 break;
+            case GameState.Lose:
+                if (mLastState != GameState.Lose)
+                {
+                    InitializeLosingScreen();
+                }
+                break;
         }
         // Update the UI
-        UI_TimerText.GetComponent<Text>().text = RoundTime;
+        UI_TimerText.GetComponent<Text>().text = RoundTimeString;
 
-        mDebugText.text = string.Format("State: {0}", mState.ToString());
+        mDebugText.text = string.Format("State: {0}", State.ToString());
+        mLastState = State;
+    }
+
+    private void tickPlaying()
+    {
+        if (mLastNPCSpawn + mSpawnRate < Time.time)
+        {
+            mLastNPCSpawn = Time.time;
+            AddCustomer();
+        }
+    }
+
+    private void InitializeLosingScreen()
+    {
+        UI_LoseScreen.SetActive(true);
+        UI_LoseScore.GetComponent<Text>().text = RoundTimeString;
+        UI_LoseReason.GetComponent<Text>().text = mLoseReason;
+        foreach (GameObject ui in UI_ToDisableOnLoss)
+        {
+            ui.SetActive(false);
+        }
     }
 
     public void DequeueInventory()
@@ -469,7 +515,7 @@ public class GameController : MonoBehaviour
                 case MicroGameController.MicroState.Lose:
                     Debug.Log("Lose! " + mActiveGame.GetDesire());
                     mActiveGame.ResetGame();
-                    mState = GameState.Playing;
+                    State = GameState.Playing;
                     mActiveGame = null;
                     mActiveWorkstation = null;
                     break;
@@ -479,12 +525,31 @@ public class GameController : MonoBehaviour
                     WorkstationData.WorkstationType desire = mActiveGame.GetDesire();
                     Debug.Log("Victory " + desire);
                     mActiveGame.ResetGame();
-                    mState = GameState.Playing;
+                    State = GameState.Playing;
                     mActiveGame = null;
                     mActiveWorkstation = null;
                     CreateInventory(desire);
                     break;
             }
+        }
+    }
+
+    public void DEBUGCREATEINVENTORY(int i)
+    {
+        switch (i)
+        {
+            case 1:
+                CreateInventory(WorkstationData.WorkstationType.bakery_1);
+                break;
+            case 2:
+                CreateInventory(WorkstationData.WorkstationType.coffee_1);
+                break;
+            case 3:
+                CreateInventory(WorkstationData.WorkstationType.tea_1);
+                break;
+            case 4:
+                CreateInventory(WorkstationData.WorkstationType.water_1);
+                break;
         }
     }
 
@@ -507,7 +572,13 @@ public class GameController : MonoBehaviour
                 break;
         }
         if (newItem == null) { return; }
-        newItem.transform.position.Set(0, 0, 5f);
+        if (mInventory.Count > 14)
+        {
+            State = GameState.Lose;
+            mLoseReason = GetLoseReason(LOSE_INVENTORY);
+            return;
+        }
+        newItem.transform.position = new Vector3(0, 10f, 5f);
         int desireIdx = desire.ToString().IndexOf('_');
         string desireKey = desire.ToString().Substring(0, desireIdx);
         newItem.name = desireKey;
@@ -529,6 +600,13 @@ public class GameController : MonoBehaviour
             case WorkstationData.WorkstationType.register:
                 if (mActiveNPCs.Count > 0)
                 {
+                    // You lose if 11+ NPCs are waiting
+                    if (mWaitingZoneNPCs.Count >= 11)
+                    {
+                        State = GameState.Lose;
+                        mLoseReason = GetLoseReason(LOSE_WAIT);
+                        return;
+                    }
                     // Adds a desire to the list
                     GameObject nextInLine = mActiveNPCs.Dequeue();
                     CustomerController cust = nextInLine.GetComponent<CustomerController>();
@@ -587,8 +665,94 @@ public class GameController : MonoBehaviour
         Debug.Assert(microGameObject != null);
         mActiveGame = microGameObject.GetComponent<MicroGameController>();
         Debug.Assert(mActiveGame != null);
-        mState = GameState.Microgame;
+        State = GameState.Microgame;
         mActiveGame.StartGame();
         CameraToPos(CAMERA_MICROGAMEPOS);
+    }
+
+    public string GetLoseReason(int reason)
+    {
+        string loseString = "";
+
+        // Holy crap but for real this is so #GAMEJAM
+        if (AmazingEnding())
+        {
+            switch (reason)
+            {
+                case LOSE_QUEUE:
+                    loseString = "The line at your shop became so long that you made FinFeed's frontpage - 'Local Coffee Shop A Must See, You Won't Believe How Long The Lines Are!' - The town's tourism board helped you hire new staff and your shop florished. Due to the success, you were able to sell the shop while still retaining an owner's share and retired receiving a steady income from your shop.";
+                    break;
+                case LOSE_WAIT:
+                    loseString = "Your wait times became so long that local foodies started writing apps to track the current wait time. Your popularity skyrocketed when one of the apps made a Top 10 nationwide list for 'Most Ridiculous App' and your wait times got even longer. Local entrepeneurs flocked to buy your business, and because you knew how the sausage was made, sold to the highest bidder. You retired happy with the notariety of the town as a successful tourism power. People still download the app to this day out of nostalgia for times lost.";
+                    break;
+                case LOSE_INVENTORY:
+                    loseString = "You made more food than people ordered but always made your customers smile. Your shop eventually earned a reputation of giving out free samples alongside the orders and you became quite popular. A local entrepeneur took notice and offered to buy you out. In reality, you couldn't sustain this much overproduction and you took the offer. You are a legend among foodies in your town and retired happily.";
+                    break;
+            }
+        }
+        else if (GreatEnding())
+        {
+            switch (reason)
+            {
+                case LOSE_QUEUE:
+                    loseString = "The lines at your cafe became so long that you earned a bit of a reputation around town as 'That trendy new coffee thing' which boosted your sales for a bit but only made the problem worse. Eventually you had to close up shop but you earned some notariety for your efforts.";
+                    break;
+                case LOSE_WAIT:
+                    loseString = "Your wait times gradually became too much for all but the most hardcore fans. You earned a well respected title of 'Worth the Wait... Sometimes' in local food magazines, but ultimately you had to close up shop. Food bloggers across the region cited your amazing food but lack of time management skills.";
+                    break;
+                case LOSE_INVENTORY:
+                    loseString = "You made too much food that people didn't order but were happy to take. You established a good relationship with the local homeless shelter, but eventually you had to cut your losses and close up shop.";
+                    break;
+            }
+        }
+        else if (GoodEnding())
+        {
+            switch (reason)
+            {
+                case LOSE_QUEUE:
+                    loseString = "Your lines started getting long enough that you earned a bit of a reputation around town. Eventually people decided they didn't want to spend an hour for a cup of coffee and you had to close up shop.";
+                    break;
+                case LOSE_WAIT:
+                    loseString = "Your wait times began to overpower your one-person production and eventually your customers stopped coming. You had to close your doors after having a decent run at starting your own business.";
+                    break;
+                case LOSE_INVENTORY:
+                    loseString = "You made too much food that people didn't order. At first you could donate most of it but over time the costs started to eat into your profits. You had a good run but eventually had to close up shop.";
+                    break;
+            }
+        }
+        else
+        {
+            switch (reason)
+            {
+                case LOSE_QUEUE:
+                    loseString = "Your line got too long and people started to write bad Yelp reviews. As time went on, you received fewer and fewer daily customers, and eventually you had to close up shop.";
+                    break;
+                case LOSE_WAIT:
+                    loseString = "You had too many orders to fill. People started to doubt your management skills and eventually stopped coming to your store.";
+                    break;
+                case LOSE_INVENTORY:
+                    loseString = "Your food storage began to overflow because you made too much food no one wanted. You felt bad wasting it so you started to store it in the closet, but the health inspector had something to say about that. Upon hearing the news of your low health rating, business started to dwindle until you eventually had to close up shop.";
+                    break;
+            }
+        }
+        return loseString;
+    }
+
+    private bool GoodEnding()
+    {
+        // 1 minutes
+        return RoundTime > 1 * 60f;
+    }
+
+    private bool GreatEnding()
+    {
+        // 2 minutes
+        return RoundTime > 2 * 60f;
+    }
+
+    private bool AmazingEnding()
+    {
+        // 3 minutes
+        return RoundTime > 3 * 60f;
     }
 }

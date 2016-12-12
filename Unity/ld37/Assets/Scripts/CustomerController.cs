@@ -41,6 +41,10 @@ public class CustomerController : MonoBehaviour
     {
         mCurrentPosition = number;
         Vector3[] path = iTweenPath.GetPath("Customer Line");
+        if (mCurrentPosition >= path.Length)
+        {
+            return;
+        }
         Debug.DrawLine(transform.position, path[number], Color.yellow);
         iTween.MoveTo(gameObject, iTween.Hash("position", path[number], "speed", 3.0f, "easetype", "linear", "oncomplete", "OnQueueMoveComplete"));
         iTween.LookTo(gameObject, iTween.Hash("looktarget", path[number], "time", 0.2f));
@@ -65,6 +69,10 @@ public class CustomerController : MonoBehaviour
         // Awwww yea GAMEJAM
         mCurrentPosition = number;
         Vector3[] path = iTweenPath.GetPath("Customer Waiting Zone");
+        if (path.Length <= mCurrentPosition)
+        {
+            return;
+        }
         Debug.DrawLine(transform.position, path[number], Color.red);
         iTween.MoveTo(gameObject, iTween.Hash("position", path[number], "speed", 3.0f, "easetype", "linear"));
 

@@ -15,6 +15,8 @@ public class BakeryController : MonoBehaviour
     {
         Debug.Assert(G_Clock != null);
         mTimer = G_Clock.GetComponent<EggTimerController>();
+        mTimer.ResetTimer();
+        G_Clock.SetActive(false);
     }
 
     // Update is called once per frame

@@ -64,6 +64,10 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         // Oh god
+        if (mGameController.State != GameController.GameState.Playing)
+        {
+            return;
+        }
         if (Input.GetKeyDown(KeyCode.Q))
         {
             MoveToWorkstation(0);
@@ -83,36 +87,6 @@ public class PlayerController : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.Alpha4))
         {
             MoveToWorkstation(4);
-        }
-
-        if (mGameController.mState != GameController.GameState.Microgame)
-        {
-            // Raycast from the camera
-            RaycastHit hit;
-            Ray ray = mCamera.ScreenPointToRay(Input.mousePosition);
-
-            if (Physics.Raycast(ray, out hit) && hit.collider.gameObject.CompareTag("Workstation"))
-            {
-                mSelectionParticles.transform.position = hit.collider.gameObject.transform.position + Vector3.up * 2;
-                mSelectedWorkstation = hit.collider.gameObject;
-                iTween.LookTo(gameObject, iTween.Hash("looktarget", mSelectedWorkstation.transform, "time", 0.25f));
-                if (!mSelectionParticles.isEmitting)
-                {
-                    mSelectionParticles.Play();
-                }
-            }
-            else
-            {
-                mSelectedWorkstation = null;
-                mSelectionParticles.Stop();
-            }
-
-            if (Input.GetMouseButtonDown(MOUSE0) && mSelectedWorkstation != null)
-            {
-                Debug.Log("Selecting " + mSelectedWorkstation.name);
-                mSelectionParticles.Stop();
-                mGameController.ActivateWorkstation(mSelectedWorkstation);
-            }
         }
     }
 }
