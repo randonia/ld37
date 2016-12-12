@@ -32,6 +32,7 @@ When you use an empty toaster, you'll place a pastry and start the timer. Wait u
 ![][28]
 
 Once it's finished, simply use the workstation again.
+
 ![][27]
 
 
