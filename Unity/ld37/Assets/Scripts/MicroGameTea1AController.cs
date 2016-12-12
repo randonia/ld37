@@ -23,6 +23,11 @@ public class MicroGameTea1AController : MicroGameController
     {
     }
 
+    public void StartGameCallback()
+    {
+        State = MicroState.Playing;
+    }
+
     protected override void _ResetGame()
     {
         G_Teabag.SetActive(false);
@@ -30,7 +35,7 @@ public class MicroGameTea1AController : MicroGameController
 
     protected override void _StartGame()
     {
-        State = MicroState.Playing;
+        State = MicroState.Transitioning;
         G_Teabag.SetActive(true);
         int startIndex = (int)(UnityEngine.Random.Range(0f, 1f) * G_StartPositions.Length);
         int teacupIndex = (UnityEngine.Random.Range(0f, 1f) < 0.5f) ? 1 : 2;

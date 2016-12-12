@@ -21,6 +21,11 @@ public class MicroGameCoffee1AController : MicroGameController
         G_CoffeePot.SetActive(true);
     }
 
+    public override float GetDelay()
+    {
+        return 0.75f;
+    }
+
     protected override void _ResetGame()
     {
     }

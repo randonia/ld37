@@ -112,6 +112,7 @@ public class GameController : MonoBehaviour
     public GameObject UI_TeaIcon;
     public GameObject UI_BakeryIcon;
     public GameObject UI_WaterIcon;
+    public GameObject UI_QueueText;
     public const int CAMERA_GAMEPOS = 0;
     public const int CAMERA_MICROGAMEPOS = 1;
 
@@ -162,6 +163,7 @@ public class GameController : MonoBehaviour
         Debug.Assert(UI_LoseScore != null);
         Debug.Assert(UI_LoseReason != null);
         Debug.Assert(UI_UpgradePanel != null);
+        Debug.Assert(UI_QueueText != null);
         Debug.Assert(UI_ToDisableOnLoss != null);
         Debug.Assert(UI_ToDisableOnLoss.Length > 0);
         Debug.Assert(PREFAB_WORKSTATION_COFFEE_1 != null);
@@ -382,10 +384,7 @@ public class GameController : MonoBehaviour
             case GameState.Paused:
                 break;
             case GameState.Lose:
-                if (mLastState != GameState.Lose)
-                {
-                    InitializeLosingScreen();
-                }
+                InitializeLosingScreen();
                 break;
         }
         // Update the UI
@@ -406,6 +405,7 @@ public class GameController : MonoBehaviour
 
     private void InitializeLosingScreen()
     {
+        if (UI_LoseScreen.activeSelf) { return; }
         UI_LoseScreen.SetActive(true);
         UI_LoseScore.GetComponent<Text>().text = RoundTimeString;
         UI_LoseReason.GetComponent<Text>().text = mLoseReason;
@@ -496,6 +496,7 @@ public class GameController : MonoBehaviour
         {
             customer.GetComponent<CustomerController>().MoveToQueuePosition(idx++);
         }
+        UI_QueueText.GetComponent<Text>().text = mActiveNPCs.Count.ToString();
     }
 
     public void CameraToPos(int pos)

@@ -38,11 +38,16 @@ public abstract class MicroGameController : MonoBehaviour
     {
         iTween.MoveTo(gameObject, iTween.Hash("position", new Vector3(UnityEngine.Random.Range(-200, 200), 0, 150),
             "time", 1.5f,
-            "delay", 1f,
+            "delay", GetDelay(),
             "easetype", "easeoutcubic",
             "onstart", "Reinitialize",
             "onstarttarget", gameObject));
         State = MicroState.Idle;
+    }
+
+    public virtual float GetDelay()
+    {
+        return 0.3f;
     }
 
     public void Reinitialize()
