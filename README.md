@@ -37,11 +37,14 @@ Once it's finished, simply use the workstation again.
 
 
 ### Controls ###
++ Q - Take Order (If customers are present)
 + 1 - Prepare Water
 + 2 - Prepare Coffee
 + 3 - Prepare Tea
 + 4 - Toast pastry - Use the workstation once to put a pastry in the toaster, and use it again when the timer has completed to serve.
-+ 
++ A/D - Move Left and Right in minigames
++ Space - Used for Coffee minigame
+
 ## 3rd Party Tools ##
 + [iTween][10]
  

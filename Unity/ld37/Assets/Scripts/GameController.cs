@@ -420,7 +420,6 @@ public class GameController : MonoBehaviour
 
     private void tickPlaying()
     {
-        Debug.Log(SpawnRate);
         if (mLastNPCSpawn + SpawnRate < Time.time)
         {
             mLastNPCSpawn = Time.time;
