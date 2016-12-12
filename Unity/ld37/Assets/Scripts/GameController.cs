@@ -124,7 +124,31 @@ public class GameController : MonoBehaviour
     public float mRoundStartTime = -1;
     private const float kRoundDuration = 5;
     private float mLastNPCSpawn = -1;
-    private int mSpawnRate = 5;
+
+    private int SpawnRate
+    {
+        get
+        {
+            // Holy crap this is garbage but it's 2am so screw it GAMEJAM
+            int fakeLevel = (int)(RoundTime / 60f);
+            if (fakeLevel == 0)
+            {
+                return 6;
+            }
+            else if (fakeLevel == 1)
+            {
+                return 4;
+            }
+            else if (fakeLevel == 2)
+            {
+                return 3;
+            }
+            else
+            {
+                return 2;
+            }
+        }
+    }
 
     public float RoundTime { get { return Time.time - mRoundStartTime; } }
     public string RoundTimeString { get { return string.Format("{1:D2}:{2:D2}", mRoundNumber, (int)(RoundTime / 60), Mathf.RoundToInt(RoundTime % 60)); } }
@@ -396,7 +420,8 @@ public class GameController : MonoBehaviour
 
     private void tickPlaying()
     {
-        if (mLastNPCSpawn + mSpawnRate < Time.time)
+        Debug.Log(SpawnRate);
+        if (mLastNPCSpawn + SpawnRate < Time.time)
         {
             mLastNPCSpawn = Time.time;
             AddCustomer();
