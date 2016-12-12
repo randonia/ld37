@@ -147,7 +147,7 @@ public class GameController : MonoBehaviour
         Debug.Assert(G_MicroGame_coffee_1 != null);
         Debug.Assert(G_MicroGame_tea_1 != null);
         //Debug.Assert(G_MicroGame_bakery_1 != null);
-        //Debug.Assert(G_MicroGame_water_1 != null);
+        Debug.Assert(G_MicroGame_water_1 != null);
         Debug.Assert(G_CashRegister != null);
         Debug.Assert(UI_OrderStack != null);
         Debug.Assert(UI_CoffeeIcon != null);
@@ -650,6 +650,9 @@ public class GameController : MonoBehaviour
                 break;
             case WorkstationData.WorkstationType.tea_1:
                 microGameObject = G_MicroGame_tea_1;
+                break;
+            case WorkstationData.WorkstationType.water_1:
+                microGameObject = G_MicroGame_water_1;
                 break;
             case WorkstationData.WorkstationType.bakery_1:
                 // Hyper specific code I guess because #CLAMJAM

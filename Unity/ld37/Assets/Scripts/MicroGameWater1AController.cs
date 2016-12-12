@@ -10,6 +10,7 @@ public class MicroGameWater1AController : MicroGameController {
     public GameObject G_BunsenBurner;
 
     private const float kMoveSpeed = 0.55f;
+    private const float kSnowballTargetWidth = 0.5f;
     private const float kMeltingChangeScaleVelocity = 0.01f;
     private const float kBaseWaterDripRate = 0.5f;
     private const float kHeatedWaterDripRate = 80.0f;
@@ -24,19 +25,20 @@ public class MicroGameWater1AController : MicroGameController {
     }
 
     protected override void _ResetGame() {
-        G_Snowball.transform.localScale = kInitialSnowballScale;
     }
 
     protected override void _StartGame() {
         State = MicroState.Playing;
+        G_Snowball.transform.localScale = kInitialSnowballScale;
+
         int startIndex = (int)(UnityEngine.Random.Range(0f, 1f) * G_StartPositions.Length);
         GameObject startPos = G_StartPositions[startIndex];
 
         Vector3 readonlygarbageunitydedgaem = G_BallAndCup.transform.position;
         G_BallAndCup.transform.position = new Vector3(startPos.transform.position.x, readonlygarbageunitydedgaem.y, readonlygarbageunitydedgaem.z);
 
-        readonlygarbageunitydedgaem = G_BunsenBurner.transform.position;
-        G_BunsenBurner.transform.position = new Vector3(0.0f, readonlygarbageunitydedgaem.y, readonlygarbageunitydedgaem.z);
+        readonlygarbageunitydedgaem = G_BunsenBurner.transform.localPosition;
+        G_BunsenBurner.transform.localPosition = new Vector3(0.0f, readonlygarbageunitydedgaem.y, readonlygarbageunitydedgaem.z);
     }
 
 	void Start() {
@@ -73,14 +75,15 @@ public class MicroGameWater1AController : MicroGameController {
         G_BunsenBurner.transform.Translate(burnerDirection);
 
         // Check if snowball is over burner
-        bool isBurnerUnderSnowball = System.Math.Abs(G_BunsenBurner.transform.position.x - G_BallAndCup.transform.position.x) < 0.5f;
+        bool isBurnerUnderSnowball = System.Math.Abs(G_BunsenBurner.transform.position.x - G_Snowball.transform.position.x) < kSnowballTargetWidth;
 
         ParticleSystem.EmissionModule emission = mWaterDripParticleSystem.emission;
 
         emission.rateOverTime = isBurnerUnderSnowball ? kHeatedWaterDripRate : kBaseWaterDripRate;
         G_Snowball.transform.localScale -= new Vector3(1, 1, 1) * (isBurnerUnderSnowball ? kMeltingChangeScaleVelocity : 0.0f);
 
-        if (G_Snowball.transform.localScale.magnitude < 0.0f) {
+
+        if (G_Snowball.transform.localScale.magnitude < 0.2f) {
             State = MicroState.Victory;
         }
     }
