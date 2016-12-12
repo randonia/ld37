@@ -15,6 +15,7 @@ You just opened up a coffee shop in your local penguin village. Serve customers 
 ### Game ###
 Take your customers' orders by going to the cashier's counter. As customers arrive, press Q to take the order of the first person in line. They will move to the right to wait for their food. If you've already made what they ordered, they'll take what's on the counter.
 
+
 ![][25]
 
 Fill your customers' orders by using the workstations that correspond to their desire. The bar on the right hand side of the screen shows your customers' orders. (You do not have to fulfill them in order). If you have downtime you can always prepare some orders preemptively by using the workstations.
