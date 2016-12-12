@@ -26,9 +26,11 @@ public class GameController : MonoBehaviour
     #region Workstation References
 
     // Forgive me father for I have sinned.
-    public GameObject G_MicroGame_coffee_1;
 
+    public GameObject G_MicroGame_coffee_1;
     public GameObject G_MicroGame_tea_1;
+    public GameObject G_MicroGame_water_1;
+    public GameObject G_MicroGame_bakery_1;
 
     public GameObject[] G_EmptyWorkstations;
 
@@ -81,6 +83,8 @@ public class GameController : MonoBehaviour
 
     public GameObject PREFAB_WORKSTATION_COFFEE_1;
     public GameObject PREFAB_WORKSTATION_TEA_1;
+    public GameObject PREFAB_WORKSTATION_WATER_1;
+    public GameObject PREFAB_WORKSTATION_BAKERY_1;
 
     #endregion Workstation Prefabs
 
@@ -129,6 +133,8 @@ public class GameController : MonoBehaviour
         Debug.Assert(G_MicroGameArena != null);
         Debug.Assert(G_MicroGame_coffee_1 != null);
         Debug.Assert(G_MicroGame_tea_1 != null);
+        //Debug.Assert(G_MicroGame_bakery_1 != null);
+        //Debug.Assert(G_MicroGame_water_1 != null);
         Debug.Assert(G_CashRegister != null);
         Debug.Assert(UI_OrderStack != null);
         Debug.Assert(UI_CoffeeIcon != null);
@@ -142,6 +148,8 @@ public class GameController : MonoBehaviour
         Debug.Assert(UI_UpgradePanel != null);
         Debug.Assert(PREFAB_WORKSTATION_COFFEE_1 != null);
         Debug.Assert(PREFAB_WORKSTATION_TEA_1 != null);
+        Debug.Assert(PREFAB_WORKSTATION_WATER_1 != null);
+        Debug.Assert(PREFAB_WORKSTATION_BAKERY_1 != null);
         for (int i = 0; i < G_Workstations.Length; ++i)
         {
             Debug.Assert(G_Workstations[i] != null, "Workstation[" + i + "] is NULL!");
@@ -159,8 +167,10 @@ public class GameController : MonoBehaviour
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
         // Debug for building workstation 3 as coffee
-        BuildWorkstation("tea", 3);
+        BuildWorkstation("water", 1);
         BuildWorkstation("coffee", 2);
+        BuildWorkstation("tea", 3);
+        BuildWorkstation("bakery", 4);
         //CameraToPos(CAMERA_GAMEPOS);
     }
 
@@ -215,6 +225,7 @@ public class GameController : MonoBehaviour
         switch (type)
         {
             case "water":
+                newWorkstation = Instantiate(PREFAB_WORKSTATION_WATER_1);
                 break;
             case "coffee":
                 newWorkstation = Instantiate(PREFAB_WORKSTATION_COFFEE_1);
@@ -223,6 +234,7 @@ public class GameController : MonoBehaviour
                 newWorkstation = Instantiate(PREFAB_WORKSTATION_TEA_1);
                 break;
             case "bakery":
+                newWorkstation = Instantiate(PREFAB_WORKSTATION_BAKERY_1);
                 break;
             case "upgrade":
                 break;
@@ -237,7 +249,22 @@ public class GameController : MonoBehaviour
         G_EmptyWorkstations[workstationIdx].SetActive(false);
         G_Workstations[workstationIdx].SetActive(false);
         newWorkstation.transform.position = G_EmptyWorkstations[workstationIdx].transform.position;
-        newYRot = (workstationIdx == 1 || workstationIdx == 2) ? 0f : (workstationIdx == 3 || workstationIdx == 4) ? 90f : 180f;
+        switch (workstationIdx)
+        {
+            case 1:
+                newYRot = 30f;
+                break;
+            case 2:
+                newYRot = 60f;
+                break;
+            case 3:
+                newYRot = 120f;
+                break;
+            case 4:
+                newYRot = 150f;
+                break;
+        }
+        // newYRot = (workstationIdx == 1 || workstationIdx == 2) ? 0f : (workstationIdx == 3 || workstationIdx == 4) ? 90f : 180f;
         Quaternion currRot = newWorkstation.transform.rotation;
         currRot.Set(currRot.x, newYRot, currRot.z, currRot.w);
         newWorkstation.transform.Rotate(transform.up, newYRot);
@@ -455,31 +482,36 @@ public class GameController : MonoBehaviour
                     mState = GameState.Playing;
                     mActiveGame = null;
                     mActiveWorkstation = null;
-                    GameObject newItem = null;
-                    switch (desire)
-                    {
-                        case WorkstationData.WorkstationType.coffee_1:
-                            newItem = Instantiate(PREFAB_COFFEE_1);
-                            break;
-                        case WorkstationData.WorkstationType.tea_1:
-                            newItem = Instantiate(PREFAB_TEA_1);
-                            break;
-                        case WorkstationData.WorkstationType.water_1:
-                            newItem = Instantiate(PREFAB_WATER_1);
-                            break;
-                        case WorkstationData.WorkstationType.bakery_1:
-                            newItem = Instantiate(PREFAB_CROISSANT_1);
-                            break;
-                    }
-                    if (newItem == null) { break; }
-                    newItem.transform.position.Set(0, 0, 5f);
-                    int desireIdx = desire.ToString().IndexOf('_');
-                    string desireKey = desire.ToString().Substring(0, desireIdx);
-                    newItem.name = desireKey;
-                    mInventory.Add(newItem);
+                    CreateInventory(desire);
                     break;
             }
         }
+    }
+
+    public void CreateInventory(WorkstationData.WorkstationType desire)
+    {
+        GameObject newItem = null;
+        switch (desire)
+        {
+            case WorkstationData.WorkstationType.coffee_1:
+                newItem = Instantiate(PREFAB_COFFEE_1);
+                break;
+            case WorkstationData.WorkstationType.tea_1:
+                newItem = Instantiate(PREFAB_TEA_1);
+                break;
+            case WorkstationData.WorkstationType.water_1:
+                newItem = Instantiate(PREFAB_WATER_1);
+                break;
+            case WorkstationData.WorkstationType.bakery_1:
+                newItem = Instantiate(PREFAB_CROISSANT_1);
+                break;
+        }
+        if (newItem == null) { return; }
+        newItem.transform.position.Set(0, 0, 5f);
+        int desireIdx = desire.ToString().IndexOf('_');
+        string desireKey = desire.ToString().Substring(0, desireIdx);
+        newItem.name = desireKey;
+        mInventory.Add(newItem);
     }
 
     /// <summary>
@@ -495,7 +527,6 @@ public class GameController : MonoBehaviour
         switch (wsData.StationType)
         {
             case WorkstationData.WorkstationType.register:
-                Debug.Log("Check out customer");
                 if (mActiveNPCs.Count > 0)
                 {
                     // Adds a desire to the list
@@ -542,6 +573,15 @@ public class GameController : MonoBehaviour
             case WorkstationData.WorkstationType.tea_1:
                 microGameObject = G_MicroGame_tea_1;
                 break;
+            case WorkstationData.WorkstationType.bakery_1:
+                // Hyper specific code I guess because #CLAMJAM
+                BakeryController controller = workstation.GetComponent<BakeryController>();
+                if (controller.Interact())
+                {
+                    controller.TakeBread();
+                    CreateInventory(WorkstationData.WorkstationType.bakery_1);
+                }
+                return;
         }
 
         Debug.Assert(microGameObject != null);

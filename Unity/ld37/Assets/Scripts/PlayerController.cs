@@ -84,14 +84,6 @@ public class PlayerController : MonoBehaviour
         {
             MoveToWorkstation(4);
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha5))
-        {
-            MoveToWorkstation(5);
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha6))
-        {
-            MoveToWorkstation(6);
-        }
 
         if (mGameController.mState != GameController.GameState.Microgame)
         {

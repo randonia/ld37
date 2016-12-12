@@ -19,6 +19,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4346677593774948}
+  - component: {fileID: 114261067609336662}
   m_Layer: 0
   m_Name: clock
   m_TagString: Untagged
@@ -66,15 +67,15 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1322750687300484}
-  m_LocalRotation: {x: 0.0000011625337, y: 0.92387986, z: 0.38268277, w: 0.0000027258432}
-  m_LocalPosition: {x: -0.21858594, y: 9.876, z: -15.56}
+  m_LocalRotation: {x: 0.00316528, y: -0.9855417, z: -0.14344619, w: 0.09011544}
+  m_LocalPosition: {x: 0, y: 3.31, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4955178813020580}
   - {fileID: 4915560082905120}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -16.39, y: -169.275, z: -1.917}
 --- !u!4 &4915560082905120
 Transform:
   m_ObjectHideFlags: 1
@@ -177,3 +178,19 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1934688850978440}
   m_Mesh: {fileID: 4300002, guid: b61396ad4a9e3e6439dd8b632b1fc490, type: 3}
+--- !u!114 &114261067609336662
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1322750687300484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9e3f1f0de78e4c48beb2b8657f5abf4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 5
+  timeStarted: 0
+  G_Spinner: {fileID: 1526632300709682}
+  Running: 0
+  Completed: 0
