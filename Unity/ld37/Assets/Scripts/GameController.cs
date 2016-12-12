@@ -60,8 +60,9 @@ public class GameController : MonoBehaviour
     #region NPC References
 
     private Queue<GameObject> mActiveNPCs;
-    private Queue<GameObject> mWaitingZoneNPCs;
-    private Queue<GameObject> mInventory;
+    private List<GameObject> mWaitingZoneNPCs;
+    private List<GameObject> mInventory;
+    private List<GameObject> mInventoryUIStack;
     public GameObject G_CashRegister;
     public GameObject G_WaitingZoneLookTarget;
 
@@ -117,8 +118,9 @@ public class GameController : MonoBehaviour
     private void Start()
     {
         mActiveNPCs = new Queue<GameObject>();
-        mWaitingZoneNPCs = new Queue<GameObject>();
-        mInventory = new Queue<GameObject>();
+        mWaitingZoneNPCs = new List<GameObject>();
+        mInventory = new List<GameObject>();
+        mInventoryUIStack = new List<GameObject>();
         Debug.Assert(G_Camera != null);
         Debug.Assert(PREFAB_COFFEE_1 != null);
         Debug.Assert(PREFAB_WATER_1 != null);
@@ -152,12 +154,13 @@ public class GameController : MonoBehaviour
         Debug.Assert(G_EmptyWorkstations.Length > 0);
         mDebugText = G_DEBUGTEXT.GetComponent<Text>();
         // Move this into user-clicked-start territory
-        Debug.Log("STARTING ROUND IN DEBUG");
+        //Debug.Log("STARTING ROUND IN DEBUG");
         //StartRound();
         // Builds and creates the workstation list!
         //InitializeWorkstationList();
         // Debug for building workstation 3 as coffee
-        //BuildWorkstation("tea", 3);
+        BuildWorkstation("tea", 3);
+        BuildWorkstation("coffee", 2);
         //CameraToPos(CAMERA_GAMEPOS);
     }
 
@@ -310,6 +313,8 @@ public class GameController : MonoBehaviour
         }
 
         OrganizeInventory();
+        OrganizeOrderingQueue();
+        OrganizeWaitQueue();
         switch (mState)
         {
             case GameState.Menu:
@@ -341,7 +346,8 @@ public class GameController : MonoBehaviour
     {
         if (mInventory.Count > 0)
         {
-            GameObject oldItem = mInventory.Dequeue();
+            GameObject oldItem = mInventory[0];
+            mInventory.RemoveAt(0);
             Destroy(oldItem);
         }
     }
@@ -354,6 +360,68 @@ public class GameController : MonoBehaviour
         {
             //item.transform.position = path[idx++];
             iTween.MoveTo(item, iTween.Hash("position", path[idx++], "time", 3.25f));
+        }
+    }
+
+    private void OrganizeWaitQueue()
+    {
+        int idx = 0;
+        Stack<GameObject> customersToRemove = new Stack<GameObject>();
+        foreach (GameObject customerObj in mWaitingZoneNPCs)
+        {
+            CustomerController customer = customerObj.GetComponent<CustomerController>();
+            customer.MoveToWaitingZone(idx++);
+            WorkstationData.WorkstationType desire = customer.Desire;
+            int desireIdx = desire.ToString().IndexOf('_');
+            string desireKey = desire.ToString().Substring(0, desireIdx);
+            GameObject selectedItem = null;
+            GameObject selectedUIItem = null;
+            // Find the inventory item we want
+            foreach (GameObject inventoryItem in mInventory)
+            {
+                if (inventoryItem.name == desireKey)
+                {
+                    selectedItem = inventoryItem;
+                    break;
+                }
+            }
+            // Find the inventory desire icon
+            foreach (GameObject desireIcon in mInventoryUIStack)
+                if (selectedItem != null)
+                {
+                    if (desireIcon.name == desireKey)
+                    {
+                        selectedUIItem = desireIcon;
+                        Debug.Log("Destroying " + selectedItem.name);
+                        mInventory.Remove(selectedItem);
+                        customersToRemove.Push(customerObj);
+                        Destroy(selectedItem);
+                        break;
+                    }
+                }
+            // blow it up
+            if (selectedUIItem != null)
+            {
+                mInventoryUIStack.Remove(selectedUIItem);
+                Destroy(selectedUIItem);
+            }
+        }
+        while (customersToRemove.Count > 0)
+        {
+            GameObject removedCustomer = customersToRemove.Pop();
+            mWaitingZoneNPCs.Remove(removedCustomer);
+            removedCustomer.GetComponent<CustomerController>().LeaveStore();
+            // TODO: Make them leave instead of deleting
+            Destroy(removedCustomer);
+        }
+    }
+
+    private void OrganizeOrderingQueue()
+    {
+        int idx = 0;
+        foreach (GameObject customer in mActiveNPCs)
+        {
+            customer.GetComponent<CustomerController>().MoveToQueuePosition(idx++);
         }
     }
 
@@ -405,7 +473,10 @@ public class GameController : MonoBehaviour
                     }
                     if (newItem == null) { break; }
                     newItem.transform.position.Set(0, 0, 5f);
-                    mInventory.Enqueue(newItem);
+                    int desireIdx = desire.ToString().IndexOf('_');
+                    string desireKey = desire.ToString().Substring(0, desireIdx);
+                    newItem.name = desireKey;
+                    mInventory.Add(newItem);
                     break;
             }
         }
@@ -458,9 +529,10 @@ public class GameController : MonoBehaviour
                     newIcon.transform.SetParent(UI_OrderStack.transform);
                     newIcon.transform.SetAsFirstSibling();
                     newIcon.SetActive(true);
+                    mInventoryUIStack.Add(newIcon);
 
                     cust.MoveToWaitingZone(mWaitingZoneNPCs.Count);
-                    mWaitingZoneNPCs.Enqueue(nextInLine);
+                    mWaitingZoneNPCs.Add(nextInLine);
                 }
 
                 return;

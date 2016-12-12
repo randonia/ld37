@@ -41,14 +41,19 @@ public class CustomerController : MonoBehaviour
     {
         mCurrentPosition = number;
         Vector3[] path = iTweenPath.GetPath("Customer Line");
-        Debug.DrawLine(transform.position, path[number], Color.yellow, 10f);
+        Debug.DrawLine(transform.position, path[number], Color.yellow);
         iTween.MoveTo(gameObject, iTween.Hash("position", path[number], "speed", 3.0f, "easetype", "linear", "oncomplete", "OnQueueMoveComplete"));
         iTween.LookTo(gameObject, iTween.Hash("looktarget", path[number], "time", 0.2f));
     }
 
+    public void LeaveStore()
+    {
+        Debug.Log("DELETING CUSTOMER INSTEAD OF HAVING THEM EXIT NICELY");
+        Destroy(gameObject);
+    }
+
     public void OnQueueMoveComplete()
     {
-        Debug.Log("Movecomplete for " + gameObject.name + ", " + mCurrentPosition);
         if (mCurrentPosition == 0)
         {
             iTween.LookTo(gameObject, iTween.Hash("looktarget", G_CashRegister.transform, "time", 0.2f, "axis", "y"));
@@ -60,14 +65,15 @@ public class CustomerController : MonoBehaviour
         // Awwww yea GAMEJAM
         mCurrentPosition = number;
         Vector3[] path = iTweenPath.GetPath("Customer Waiting Zone");
-        Debug.DrawLine(transform.position, path[number], Color.red, 10f);
-        iTween.MoveTo(gameObject, iTween.Hash("position", path[number], "speed", 3.0f, "easetype", "linear", "oncomplete", "OnWaitingZoneMoveComplete"));
-        iTween.LookTo(gameObject, iTween.Hash("looktarget", path[number], "time", 0.2f));
-    }
+        Debug.DrawLine(transform.position, path[number], Color.red);
+        iTween.MoveTo(gameObject, iTween.Hash("position", path[number], "speed", 3.0f, "easetype", "linear"));
 
-    private void OnWaitingZoneMoveComplete()
-    {
-        iTween.LookTo(gameObject, iTween.Hash("looktarget", mGameController.G_WaitingZoneLookTarget.transform, "time", 0.2f, "axis", "y"));
+        float sqrMag = (gameObject.transform.position - path[number]).sqrMagnitude;
+        Vector3 lookPosition = (sqrMag > 0.2f) ? path[number] : mGameController.G_WaitingZoneLookTarget.transform.position;
+        iTween.LookTo(gameObject, iTween.Hash(
+            "looktarget", lookPosition,
+            "time", 0.6f,
+            "axis", "y"));
     }
 
     // Update is called once per frame
